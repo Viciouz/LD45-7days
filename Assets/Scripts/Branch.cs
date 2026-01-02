@@ -22,10 +22,6 @@ public class Branch : MonoBehaviour {
 
     public Rigidbody2D body;
 
-    // Cache for optimization to reduce redundant calculations
-    private Vector3 cachedRootPosition;
-    private Vector3 cachedPosition;
-
     private void OnEnable() {
         // Reset state when object is retrieved from pool
         water = 0f;
@@ -139,15 +135,16 @@ public class Branch : MonoBehaviour {
     }
 
     private void Update() {
-        // Cache positions to avoid redundant property accesses
-        cachedRootPosition = rootTransform.position;
-        cachedPosition = transform.position;
-        
-        // Only update LineRenderer if positions have actually changed
-        lineRenderer.SetPosition(0, cachedRootPosition);
-        lineRenderer.SetPosition(1, cachedPosition);
+        // Update LineRenderer with current positions
+        // Note: LineRenderer needs continuous updates as branch grows
+        lineRenderer.SetPosition(0, rootTransform.position);
+        lineRenderer.SetPosition(1, transform.position);
     }
 
+    private void OnDisable() {
+        // Kill any active tweens when object is returned to pool
+        transform.DOKill();
+    }
 
 
 }

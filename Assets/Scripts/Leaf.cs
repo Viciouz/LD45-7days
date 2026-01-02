@@ -25,6 +25,9 @@ public class Leaf : MonoBehaviour {
     // Time step optimization - avoid frame-by-frame updates
     private readonly float timeStep = 0.1f;
     private float time = 0;
+    
+    // Reuse DOTween sequence to avoid allocations
+    private Sequence scaleSequence;
 
     private void OnEnable() {
         // Reset state when object is retrieved from pool
@@ -32,7 +35,7 @@ public class Leaf : MonoBehaviour {
         state = State.Healthy;
         time = 0f;
         
-        // Initialize life and scale animation
+        // Initialize life
         life = Tree.Instance.leafLife;
         transform.localScale = Vector3.zero;
         
@@ -42,8 +45,12 @@ public class Leaf : MonoBehaviour {
             body.velocity = Vector2.zero;
         }
         
-        // Combine DOTween animations into a sequence for better performance
-        Sequence scaleSequence = DOTween.Sequence();
+        // Kill existing sequence and create entrance animation
+        if (scaleSequence != null && scaleSequence.IsActive()) {
+            scaleSequence.Kill();
+        }
+        
+        scaleSequence = DOTween.Sequence();
         scaleSequence.Append(transform.DOBlendableScaleBy(new Vector3(1f, 1f), 0.2f));
         scaleSequence.Append(transform.DOPunchScale(new Vector3(0.3f, 0.3f), 0.5f));
     }
@@ -102,9 +109,16 @@ public class Leaf : MonoBehaviour {
             yield return new WaitForSeconds(1f);
         }
         
-        // Use DOTween callback to avoid extra coroutine wait
-        // Object is returned to pool in DeathOfABeutifulLeaf instead of destroyed
+        // Scale down animation - object was already returned to pool in DeathOfABeutifulLeaf
         transform.DOScale(0f, 0.3f);
         yield return new WaitForSeconds(0.3f);
+    }
+    
+    private void OnDisable() {
+        // Kill any active tweens when object is returned to pool
+        if (scaleSequence != null && scaleSequence.IsActive()) {
+            scaleSequence.Kill();
+        }
+        transform.DOKill();
     }
 }
