@@ -26,7 +26,7 @@ public class Leaf : MonoBehaviour {
     private readonly float timeStep = 0.1f;
     private float time = 0;
     
-    // Reuse DOTween sequence to avoid allocations
+    // DOTween sequence reference for cleanup
     private Sequence scaleSequence;
 
     private void OnEnable() {
@@ -45,7 +45,13 @@ public class Leaf : MonoBehaviour {
             body.velocity = Vector2.zero;
         }
         
+        // Get branch reference from parent when retrieved from pool
+        if (branch == null || branch.transform != transform.parent) {
+            branch = transform.parent.GetComponent<Branch>();
+        }
+        
         // Kill existing sequence and create entrance animation
+        // Note: DOTween sequences don't support reset/reuse, so we create new ones
         if (scaleSequence != null && scaleSequence.IsActive()) {
             scaleSequence.Kill();
         }
@@ -56,6 +62,7 @@ public class Leaf : MonoBehaviour {
     }
 
     private void Start() {
+        // Kept for first-time initialization if object is not from pool
         if (branch == null) {
             branch = transform.parent.GetComponent<Branch>();
         }

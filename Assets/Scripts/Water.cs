@@ -22,8 +22,11 @@ public class Water : MonoBehaviour
         // Add water once per collision, not per collision event
         if (leaf && numCollisionEvents > 0) {
             leaf.branch.water += Tree.Instance.waterPoints;
-            // Consolidate shake animation instead of per-collision
-            leaf.transform.DOShakeRotation(0.3f);
+            
+            // Only shake if not already shaking to avoid tween accumulation
+            if (!DOTween.IsTweening(leaf.transform)) {
+                leaf.transform.DOShakeRotation(0.3f);
+            }
         }
     }
 }

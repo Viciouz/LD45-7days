@@ -5,7 +5,6 @@ using UnityEngine;
 
 public class Branch : MonoBehaviour {
     public LineRenderer lineRenderer;
-    public GameObject leafPrefab;
     public List<GameObject> flowerPrefabs;
     public Transform rootTransform;
 
