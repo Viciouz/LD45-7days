@@ -166,9 +166,17 @@ public class GameManager : MonoBehaviour {
             levelSequence.Append(timeImage.DOFillAmount(timeLeft / levelTime, 0.3f));
             levelSequence.Join(timeImage.rectTransform.DOPunchScale(new Vector3(1.1f, 1.1f), 0.3f, 1, 1));
             levelSequence.Join(sunTransform.DOShakeScale(0.5f));
-            levelSequence.Append(sunTransform.DOMove(levelSunPositions[level].position, 0.5f));
-            levelSequence.Join(Camera.main.transform.DOMove(new Vector3(0f, cameraYPosition[level], -20f), 0.3f));
-            levelSequence.Join(Camera.main.DOColor(levelColors[level], 0.3f));
+            
+            // Bounds checking for array access
+            if (level < levelSunPositions.Count) {
+                levelSequence.Append(sunTransform.DOMove(levelSunPositions[level].position, 0.5f));
+            }
+            if (level < cameraYPosition.Count) {
+                levelSequence.Join(Camera.main.transform.DOMove(new Vector3(0f, cameraYPosition[level], -20f), 0.3f));
+            }
+            if (level < levelColors.Count) {
+                levelSequence.Join(Camera.main.DOColor(levelColors[level], 0.3f));
+            }
             
             dayText.text = (level + 1).ToString();
             SoundManager.PlayRandomSfx(levelCompleteSFX);

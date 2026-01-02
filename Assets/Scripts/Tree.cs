@@ -37,6 +37,8 @@ public class Tree : MonoBehaviour {
 
     public static Tree Instance { get; set; }
     public GameObject branchPrefab;
+    
+    [Header("Prefabs")]
     public GameObject leafPrefab;
 
 

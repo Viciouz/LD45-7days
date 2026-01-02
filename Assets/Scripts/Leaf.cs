@@ -46,7 +46,8 @@ public class Leaf : MonoBehaviour {
         }
         
         // Get branch reference from parent when retrieved from pool
-        if (branch == null || branch.transform != transform.parent) {
+        // Only call GetComponent if branch is null to avoid unnecessary overhead
+        if (branch == null) {
             branch = transform.parent.GetComponent<Branch>();
         }
         
