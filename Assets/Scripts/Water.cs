@@ -19,12 +19,9 @@ public class Water : MonoBehaviour
 
         Leaf leaf = other.GetComponent<Leaf>();
         
-        // Optimized loop - only process if leaf exists
-        if (leaf) {
-            // Process all collision events efficiently
-            for (int i = 0; i < numCollisionEvents; i++) {
-                leaf.branch.water += Tree.Instance.waterPoints;
-            }
+        // Add water once per collision, not per collision event
+        if (leaf && numCollisionEvents > 0) {
+            leaf.branch.water += Tree.Instance.waterPoints;
             // Consolidate shake animation instead of per-collision
             leaf.transform.DOShakeRotation(0.3f);
         }

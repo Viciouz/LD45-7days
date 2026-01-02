@@ -96,11 +96,7 @@ public class Branch : MonoBehaviour {
     public void DeathOfABeutifulLeaf(GameObject leaf) {
         leafs.Remove(leaf);
         
-        // Return leaf to pool instead of destroying
-        Leaf leafComponent = leaf.GetComponent<Leaf>();
-        if (leafComponent != null) {
-            Tree.Instance.GetLeafPool().Return(leafComponent);
-        }
+        // Note: Leaf will return itself to pool after animation completes in BreakLeaf
         
         if (leafs.Count <= 0) {
             if (parentBranch != null) {
@@ -120,17 +116,21 @@ public class Branch : MonoBehaviour {
             yield return new WaitForSeconds(1f);
         }
 
-        // Use DOTween sequence for cleaner animation flow
-        transform.DOScale(0f, 0.3f).OnComplete(() => {
-            parentBranch.branches.Remove(gameObject);
-            // Return branch to pool instead of destroying
-            Tree.Instance.GetBranchPool().Return(this);
-            
-            // Cleanup root object
-            if (rootTransform != null) {
-                Destroy(rootTransform.gameObject);
-            }
-        });
+        // Scale down animation
+        transform.DOScale(0f, 0.3f);
+        yield return new WaitForSeconds(0.3f);
+        
+        // Cleanup and return to pool
+        parentBranch.branches.Remove(gameObject);
+        
+        // Cleanup root object before returning to pool
+        if (rootTransform != null) {
+            Destroy(rootTransform.gameObject);
+            rootTransform = null;
+        }
+        
+        // Return branch to pool
+        Tree.Instance.GetBranchPool().Return(this);
 
     }
 

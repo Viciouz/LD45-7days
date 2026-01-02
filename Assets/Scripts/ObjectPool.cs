@@ -19,7 +19,8 @@ public class ObjectPool<T> where T : MonoBehaviour {
         
         // Pre-populate pool to avoid allocations during gameplay
         for (int i = 0; i < initialSize; i++) {
-            CreateNewObject();
+            T obj = CreateNewObject();
+            pool.Enqueue(obj);
         }
     }
 
@@ -27,7 +28,6 @@ public class ObjectPool<T> where T : MonoBehaviour {
         GameObject obj = Object.Instantiate(prefab, parent);
         T component = obj.GetComponent<T>();
         obj.SetActive(false);
-        pool.Enqueue(component);
         return component;
     }
 
@@ -35,7 +35,13 @@ public class ObjectPool<T> where T : MonoBehaviour {
     /// Gets an object from the pool or creates a new one if pool is empty
     /// </summary>
     public T Get() {
-        T obj = pool.Count > 0 ? pool.Dequeue() : CreateNewObject();
+        T obj;
+        if (pool.Count > 0) {
+            obj = pool.Dequeue();
+        } else {
+            // Create new object without pre-enqueueing it
+            obj = CreateNewObject();
+        }
         obj.gameObject.SetActive(true);
         return obj;
     }

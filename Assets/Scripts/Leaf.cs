@@ -109,9 +109,12 @@ public class Leaf : MonoBehaviour {
             yield return new WaitForSeconds(1f);
         }
         
-        // Scale down animation - object was already returned to pool in DeathOfABeutifulLeaf
+        // Scale down animation before returning to pool
         transform.DOScale(0f, 0.3f);
         yield return new WaitForSeconds(0.3f);
+        
+        // Return to pool after animation completes
+        Tree.Instance.GetLeafPool().Return(this);
     }
     
     private void OnDisable() {
