@@ -30,8 +30,22 @@ public class Branch : MonoBehaviour {
         // Reset state when object is retrieved from pool
         water = 0f;
         radius = 0f;
+        
+        // Initialize lists if null
+        if (leafs == null) leafs = new List<GameObject>();
+        if (branches == null) branches = new List<GameObject>();
+        
         leafs.Clear();
         branches.Clear();
+        
+        // Reset physics state
+        if (body != null) {
+            body.isKinematic = true;
+            body.velocity = Vector2.zero;
+        }
+        
+        // Reset scale
+        transform.localScale = Vector3.one;
     }
 
     public void Grow() {

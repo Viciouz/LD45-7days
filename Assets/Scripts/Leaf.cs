@@ -36,6 +36,12 @@ public class Leaf : MonoBehaviour {
         life = Tree.Instance.leafLife;
         transform.localScale = Vector3.zero;
         
+        // Reset physics state
+        if (body != null) {
+            body.isKinematic = true;
+            body.velocity = Vector2.zero;
+        }
+        
         // Combine DOTween animations into a sequence for better performance
         Sequence scaleSequence = DOTween.Sequence();
         scaleSequence.Append(transform.DOBlendableScaleBy(new Vector3(1f, 1f), 0.2f));

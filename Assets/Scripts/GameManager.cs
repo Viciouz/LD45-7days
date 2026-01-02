@@ -158,16 +158,18 @@ public class GameManager : MonoBehaviour {
             levelTime += 20;
             timeLeft = levelTime;
             
+            // Increment level first to get correct array indices
+            level++;
+            
             // Combine DOTween animations for level progression
             Sequence levelSequence = DOTween.Sequence();
             levelSequence.Append(timeImage.DOFillAmount(timeLeft / levelTime, 0.3f));
             levelSequence.Join(timeImage.rectTransform.DOPunchScale(new Vector3(1.1f, 1.1f), 0.3f, 1, 1));
             levelSequence.Join(sunTransform.DOShakeScale(0.5f));
-            levelSequence.Append(sunTransform.DOMove(levelSunPositions[level + 1].position, 0.5f));
-            levelSequence.Join(Camera.main.transform.DOMove(new Vector3(0f, cameraYPosition[level + 1], -20f), 0.3f));
-            levelSequence.Join(Camera.main.DOColor(levelColors[level + 1], 0.3f));
+            levelSequence.Append(sunTransform.DOMove(levelSunPositions[level].position, 0.5f));
+            levelSequence.Join(Camera.main.transform.DOMove(new Vector3(0f, cameraYPosition[level], -20f), 0.3f));
+            levelSequence.Join(Camera.main.DOColor(levelColors[level], 0.3f));
             
-            level++;
             dayText.text = (level + 1).ToString();
             SoundManager.PlayRandomSfx(levelCompleteSFX);
             Camera.main.orthographicSize = Camera.main.orthographicSize <= 13 ? Camera.main.orthographicSize += 2 : 13;
