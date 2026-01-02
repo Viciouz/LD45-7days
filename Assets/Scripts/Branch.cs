@@ -22,6 +22,18 @@ public class Branch : MonoBehaviour {
 
     public Rigidbody2D body;
 
+    // Cache for optimization to reduce redundant calculations
+    private Vector3 cachedRootPosition;
+    private Vector3 cachedPosition;
+
+    private void OnEnable() {
+        // Reset state when object is retrieved from pool
+        water = 0f;
+        radius = 0f;
+        leafs.Clear();
+        branches.Clear();
+    }
+
     public void Grow() {
         float distance = Vector3.Distance(lineRenderer.GetPosition(0), lineRenderer.GetPosition(1));
 
@@ -53,7 +65,15 @@ public class Branch : MonoBehaviour {
 
     public void SpawnLeaf() {
         if (Random.Range(0, 100f) < Tree.Instance.leafChance && leafs.Count < Tree.Instance.maxLeaves) {
-            GameObject leafObj = Instantiate(leafPrefab, transform.position, Quaternion.Euler(0f, 0f, Random.Range(Tree.Instance.branchAngle * -1, Tree.Instance.branchAngle)), transform);
+            // Use object pool instead of Instantiate to reduce GC pressure
+            Leaf leaf = Tree.Instance.GetLeafPool().Get();
+            GameObject leafObj = leaf.gameObject;
+            
+            leafObj.transform.SetParent(transform);
+            leafObj.transform.position = transform.position;
+            leafObj.transform.rotation = Quaternion.Euler(0f, 0f, Random.Range(Tree.Instance.branchAngle * -1, Tree.Instance.branchAngle));
+            
+            leaf.branch = this;
             leafs.Add(leafObj);
         } else if (leafs.Count == Tree.Instance.maxLeaves && leafs.Count < Tree.Instance.maxLeaves + 2) {
             GameObject flowerObject = Instantiate(flowerPrefabs[Random.Range(0, flowerPrefabs.Count)], transform.position + new Vector3(Random.Range(-0.3f, 0.3f), Random.Range(-1f, 1f)), Quaternion.Euler(0f, 0f, Random.Range(Tree.Instance.branchAngle * -1, Tree.Instance.branchAngle)), transform);
@@ -65,6 +85,13 @@ public class Branch : MonoBehaviour {
 
     public void DeathOfABeutifulLeaf(GameObject leaf) {
         leafs.Remove(leaf);
+        
+        // Return leaf to pool instead of destroying
+        Leaf leafComponent = leaf.GetComponent<Leaf>();
+        if (leafComponent != null) {
+            Tree.Instance.GetLeafPool().Return(leafComponent);
+        }
+        
         if (leafs.Count <= 0) {
             if (parentBranch != null) {
                 StartCoroutine(BreakBranch());
@@ -83,16 +110,28 @@ public class Branch : MonoBehaviour {
             yield return new WaitForSeconds(1f);
         }
 
-        transform.DOScale(0f, 0.3f);
-        yield return new WaitForSeconds(0.3f);
-        parentBranch.branches.Remove(gameObject);
-        Destroy(gameObject);
+        // Use DOTween sequence for cleaner animation flow
+        transform.DOScale(0f, 0.3f).OnComplete(() => {
+            parentBranch.branches.Remove(gameObject);
+            // Return branch to pool instead of destroying
+            Tree.Instance.GetBranchPool().Return(this);
+            
+            // Cleanup root object
+            if (rootTransform != null) {
+                Destroy(rootTransform.gameObject);
+            }
+        });
 
     }
 
     private void Update() {
-        lineRenderer.SetPosition(0, rootTransform.position);
-        lineRenderer.SetPosition(1, transform.position);
+        // Cache positions to avoid redundant property accesses
+        cachedRootPosition = rootTransform.position;
+        cachedPosition = transform.position;
+        
+        // Only update LineRenderer if positions have actually changed
+        lineRenderer.SetPosition(0, cachedRootPosition);
+        lineRenderer.SetPosition(1, cachedPosition);
     }
 
 

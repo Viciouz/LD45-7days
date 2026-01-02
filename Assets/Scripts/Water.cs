@@ -7,6 +7,7 @@ public class Water : MonoBehaviour
 {
 
     public ParticleSystem part;
+    // Pre-allocated list to avoid GC allocations on each collision
     public List<ParticleCollisionEvent> collisionEvents;
 
     void Start() {
@@ -18,14 +19,15 @@ public class Water : MonoBehaviour
         int numCollisionEvents = part.GetCollisionEvents(other, collisionEvents);
 
         Leaf leaf = other.GetComponent<Leaf>();
-        int i = 0;
-
-        while (i < numCollisionEvents) {
-            if (leaf) {
+        
+        // Optimized loop - only process if leaf exists
+        if (leaf) {
+            // Process all collision events efficiently
+            for (int i = 0; i < numCollisionEvents; i++) {
                 leaf.branch.water += Tree.Instance.waterPoints;
-                leaf.transform.DOShakeRotation(0.3f);
             }
-            i++;
+            // Consolidate shake animation instead of per-collision
+            leaf.transform.DOShakeRotation(0.3f);
         }
     }
 }
