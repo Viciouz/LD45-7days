@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using DG.Tweening;
 
@@ -7,6 +6,7 @@ public class Water : MonoBehaviour
 {
 
     public ParticleSystem part;
+    // Pre-allocated list to avoid GC allocations on each collision
     public List<ParticleCollisionEvent> collisionEvents;
 
     void Start() {
@@ -18,14 +18,15 @@ public class Water : MonoBehaviour
         int numCollisionEvents = part.GetCollisionEvents(other, collisionEvents);
 
         Leaf leaf = other.GetComponent<Leaf>();
-        int i = 0;
-
-        while (i < numCollisionEvents) {
-            if (leaf) {
-                leaf.branch.water += Tree.Instance.waterPoints;
+        
+        // Add water once per collision, not per collision event
+        if (leaf && numCollisionEvents > 0) {
+            leaf.branch.water += Tree.Instance.waterPoints;
+            
+            // Only shake if not already shaking to avoid tween accumulation
+            if (!DOTween.IsTweening(leaf.transform)) {
                 leaf.transform.DOShakeRotation(0.3f);
             }
-            i++;
         }
     }
 }

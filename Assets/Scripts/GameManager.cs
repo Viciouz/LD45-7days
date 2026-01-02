@@ -76,13 +76,18 @@ public class GameManager : MonoBehaviour {
     public void StartGame() {
         Camera.main.DOColor(levelColors[level], 0.3f);
         Time.timeScale = 1f;
-        StartCoroutine(Timer());
-        scorePanel.DOScale(1, 0.3f);
-        timePanel.DOScale(1, 0.3f);
-        startButton.DOScale(0, 0.3f);
+        
+        // Use DOTween sequence for cleaner UI animation flow
+        Sequence uiSequence = DOTween.Sequence();
+        uiSequence.Append(scorePanel.DOScale(1, 0.3f));
+        uiSequence.Join(timePanel.DOScale(1, 0.3f));
+        uiSequence.Join(startButton.DOScale(0, 0.3f));
+        
         state = GameState.Active;
         SoundManager.Instance.musicSource.Play();
         rain.SetActive(true);
+        
+        // Start timer only once (removed duplicate call)
         StartCoroutine(Timer());
     }
 
@@ -105,18 +110,23 @@ public class GameManager : MonoBehaviour {
 
     public IEnumerator GameOver() {
         state = GameState.Gameover;
-        sunTransform.DOMove(new Vector3(0f, 3f, 0f), 0.5f);
-        Camera.main.DOColor(levelColors[6], 1f);
+        
+        // Combine multiple DOTween animations into a sequence for better performance
+        Sequence gameOverSequence = DOTween.Sequence();
+        gameOverSequence.Append(sunTransform.DOMove(new Vector3(0f, 3f, 0f), 0.5f));
+        gameOverSequence.Join(Camera.main.DOColor(levelColors[6], 1f));
+        
         Camera.main.transform.position = new Vector3(0f, 3f, -20f);
         Camera.main.orthographicSize = 3;
         Camera.main.transform.DOShakePosition(3f);
         SoundManager.PlayRandomSfx(gameOverSFX);
+        
         if (score > highscore) {
             PlayerPrefs.SetInt("highscore", score);
         }
+        
         yield return new WaitForSeconds(3f);
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
-
     }
 
     public void CompleteLevel() {
@@ -128,13 +138,17 @@ public class GameManager : MonoBehaviour {
     public IEnumerator SetUpLevel() {
         if (level >= 6) {
             isLoading = true;
-            timeImage.DOColor(completeColor, 0.3f);
-            timeImage.DOFillAmount(1, 0.3f);
+            
+            // Combine DOTween animations into a sequence for better performance
+            Sequence victorySequence = DOTween.Sequence();
+            victorySequence.Append(timeImage.DOColor(completeColor, 0.3f));
+            victorySequence.Join(timeImage.DOFillAmount(1, 0.3f));
+            victorySequence.Join(sunSprite.DOColor(completeColor, 0.3f));
+            victorySequence.Join(innerSunSprite.DOColor(completeColor, 0.3f));
+            victorySequence.Join(Camera.main.DOColor(levelColors[2], 0.3f));
+            victorySequence.Append(victoryPanel.DOScale(1f, 0.3f));
+            
             dayText.text = "7";
-            Camera.main.DOColor(levelColors[2], 0.3f);
-            sunSprite.DOColor(completeColor, 0.3f);
-            innerSunSprite.DOColor(completeColor, 0.3f);
-            victoryPanel.DOScale(1f, 0.3f);
             SoundManager.PlayRandomSfx(victorySFX);
 
             state = GameState.Gameover;
@@ -143,20 +157,34 @@ public class GameManager : MonoBehaviour {
             isLoading = true;
             levelTime += 20;
             timeLeft = levelTime;
-            timeImage.DOFillAmount(timeLeft / levelTime, 0.3f);
-            timeImage.rectTransform.DOPunchScale(new Vector3(1.1f, 1.1f), 0.3f, 1, 1);
+            
+            // Increment level first to get correct array indices
             level++;
+            
+            // Combine DOTween animations for level progression
+            Sequence levelSequence = DOTween.Sequence();
+            levelSequence.Append(timeImage.DOFillAmount(timeLeft / levelTime, 0.3f));
+            levelSequence.Join(timeImage.rectTransform.DOPunchScale(new Vector3(1.1f, 1.1f), 0.3f, 1, 1));
+            levelSequence.Join(sunTransform.DOShakeScale(0.5f));
+            
+            // Bounds checking for array access
+            if (level < levelSunPositions.Count) {
+                levelSequence.Append(sunTransform.DOMove(levelSunPositions[level].position, 0.5f));
+            }
+            if (level < cameraYPosition.Count) {
+                levelSequence.Join(Camera.main.transform.DOMove(new Vector3(0f, cameraYPosition[level], -20f), 0.3f));
+            }
+            if (level < levelColors.Count) {
+                levelSequence.Join(Camera.main.DOColor(levelColors[level], 0.3f));
+            }
+            
             dayText.text = (level + 1).ToString();
             SoundManager.PlayRandomSfx(levelCompleteSFX);
-            sunTransform.DOShakeScale(0.5f);
-            sunTransform.DOMove(levelSunPositions[level].position, 0.5f);
             Camera.main.orthographicSize = Camera.main.orthographicSize <= 13 ? Camera.main.orthographicSize += 2 : 13;
-            Camera.main.transform.DOMove(new Vector3(0f, cameraYPosition[level], -20f), 0.3f);
-            Camera.main.DOColor(levelColors[level], 0.3f);
+            
             yield return new WaitForSeconds(1f);
             isLoading = false;
         }
-
     }
 
 }
